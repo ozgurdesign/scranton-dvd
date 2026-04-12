@@ -2,3 +2,4 @@ Scranton DVD.saver/
 generate_thumbnail
 build_arm64/
 build_x86_64/
+.DS_Store

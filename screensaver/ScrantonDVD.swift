@@ -19,6 +19,8 @@ class ScrantonDVD: ScreenSaverView {
     private static let sheetController = SheetController()
     private var logoWidth: CGFloat = 400
     private var logoHeight: CGFloat = 204
+    private var needsPositionInit = true
+    private var lastBoundsSize: NSSize = .zero
 
     private let colours: [(CGFloat, CGFloat, CGFloat)] = [
         (0.0, 0.455, 0.522),
@@ -61,38 +63,85 @@ class ScrantonDVD: ScreenSaverView {
         animationTimeInterval = 1.0 / 60.0
         mode = ScrantonDVD.defaults.integer(forKey: "mode")
 
+        cachedLogoColours = colours.map { NSColor(red: $0.0, green: $0.1, blue: $0.2, alpha: 1.0) }
+        cachedBgColours = colours.map { NSColor(red: 1.0 - $0.0, green: 1.0 - $0.1, blue: 1.0 - $0.2, alpha: 1.0) }
+
+        needsPositionInit = true
+    }
+
+    private func initPositionIfNeeded() {
+        guard needsPositionInit || lastBoundsSize != bounds.size else { return }
+
+        let oldMaxX = max(lastBoundsSize.width - logoWidth, 1)
+        let oldMaxY = max(lastBoundsSize.height - logoHeight, 1)
+        let hadPriorBounds = lastBoundsSize.width > 0
+
         if bounds.width < 500 || bounds.height < 300 {
             logoWidth = 80
             logoHeight = 41
-            dx = 1.0
-            dy = 1.0
+            dx = copysign(1.0, dx)
+            dy = copysign(1.0, dy)
+        } else {
+            logoWidth = 400
+            logoHeight = 204
+            dx = copysign(2.0, dx)
+            dy = copysign(2.0, dy)
         }
 
         cachedPath = dvdBezierPath(in: NSRect(x: 0, y: 0, width: logoWidth, height: logoHeight))
-        cachedLogoColours = colours.map { NSColor(red: $0.0, green: $0.1, blue: $0.2, alpha: 1.0) }
-        cachedBgColours = colours.map { NSColor(red: 1.0 - $0.0, green: 1.0 - $0.1, blue: 1.0 - $0.2, alpha: 1.0) }
 
         let maxX = max(bounds.width - logoWidth, 1)
         let maxY = max(bounds.height - logoHeight, 1)
 
-        if let fx = ScrantonDVD.sharedFracX, let fy = ScrantonDVD.sharedFracY,
-           let sdx = ScrantonDVD.sharedDXSign, let sdy = ScrantonDVD.sharedDYSign,
-           let sci = ScrantonDVD.sharedColourIndex {
-            x = fx * maxX
-            y = fy * maxY
-            dx = abs(dx) * sdx
-            dy = abs(dy) * sdy
-            colourIndex = sci % colours.count
-        } else {
-            colourIndex = Int.random(in: 0..<colours.count)
-            x = CGFloat.random(in: 0...maxX)
-            y = CGFloat.random(in: 0...maxY)
-            if Bool.random() { dx = -dx }
-            if Bool.random() { dy = -dy }
+        if needsPositionInit {
+            if let fx = ScrantonDVD.sharedFracX, let fy = ScrantonDVD.sharedFracY,
+               let sdx = ScrantonDVD.sharedDXSign, let sdy = ScrantonDVD.sharedDYSign,
+               let sci = ScrantonDVD.sharedColourIndex {
+                x = fx * maxX
+                y = fy * maxY
+                dx = copysign(abs(dx), sdx)
+                dy = copysign(abs(dy), sdy)
+                colourIndex = sci % colours.count
+            } else {
+                colourIndex = Int.random(in: 0..<colours.count)
+                x = CGFloat.random(in: 0...maxX)
+                y = CGFloat.random(in: 0...maxY)
+                if Bool.random() { dx = -dx }
+                if Bool.random() { dy = -dy }
+            }
+        } else if hadPriorBounds {
+            x = (x / oldMaxX) * maxX
+            y = (y / oldMaxY) * maxY
         }
+
+        x = min(max(x, 0), maxX)
+        y = min(max(y, 0), maxY)
+
+        lastBoundsSize = bounds.size
+        needsPositionInit = false
+    }
+
+    override func startAnimation() {
+        super.startAnimation()
+        hideSystemOverlays()
+    }
+
+    private func hideSystemOverlays() {
+        func hideLabels(in view: NSView) {
+            for sub in view.subviews where sub !== self {
+                if sub is NSTextField || sub is NSTextView {
+                    sub.isHidden = true
+                }
+                hideLabels(in: sub)
+            }
+        }
+        if let sv = superview { hideLabels(in: sv) }
+        if let w = window?.contentView { hideLabels(in: w) }
     }
 
     override func animateOneFrame() {
+        initPositionIfNeeded()
+
         let maxX = bounds.width - logoWidth
         let maxY = bounds.height - logoHeight
         var hit = false

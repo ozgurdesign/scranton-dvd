@@ -121,26 +121,23 @@ class ScrantonDVD: ScreenSaverView {
         needsPositionInit = false
     }
 
-    override func startAnimation() {
-        super.startAnimation()
-        hideSystemOverlays()
-    }
+    private var hasHiddenOverlays = false
 
-    private func hideSystemOverlays() {
-        func hideLabels(in view: NSView) {
-            for sub in view.subviews where sub !== self {
-                if sub is NSTextField || sub is NSTextView {
-                    sub.isHidden = true
-                }
-                hideLabels(in: sub)
+    private func hideSystemOverlaysOnce() {
+        guard !hasHiddenOverlays else { return }
+        hasHiddenOverlays = true
+
+        guard let sv = superview else { return }
+        for sub in sv.subviews where sub !== self {
+            if let tf = sub as? NSTextField, !tf.isEditable {
+                tf.isHidden = true
             }
         }
-        if let sv = superview { hideLabels(in: sv) }
-        if let w = window?.contentView { hideLabels(in: w) }
     }
 
     override func animateOneFrame() {
         initPositionIfNeeded()
+        hideSystemOverlaysOnce()
 
         let maxX = bounds.width - logoWidth
         let maxY = bounds.height - logoHeight

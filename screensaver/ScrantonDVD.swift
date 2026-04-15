@@ -44,6 +44,12 @@ class ScrantonDVD: ScreenSaverView {
     private var cachedPath: NSBezierPath?
     private var cachedLogoColours: [NSColor] = []
     private var cachedBgColours: [NSColor] = []
+    private var cachedLogoImage: NSImage?
+    private var cachedImageColourIndex: Int = -1
+    private var cachedImageMode: Int = -1
+    private var cachedImageSize: NSSize = .zero
+    private var cachedFracMaxX: CGFloat = 1
+    private var cachedFracMaxY: CGFloat = 1
 
     private static let defaults: UserDefaults = {
         return UserDefaults(suiteName: defaultsKey) ?? .standard
@@ -89,9 +95,12 @@ class ScrantonDVD: ScreenSaverView {
         }
 
         cachedPath = dvdBezierPath(in: NSRect(x: 0, y: 0, width: logoWidth, height: logoHeight))
+        cachedLogoImage = nil
 
         let maxX = max(bounds.width - logoWidth, 1)
         let maxY = max(bounds.height - logoHeight, 1)
+        cachedFracMaxX = maxX
+        cachedFracMaxY = maxY
 
         if needsPositionInit {
             if let fx = ScrantonDVD.sharedFracX, let fy = ScrantonDVD.sharedFracY,
@@ -139,6 +148,8 @@ class ScrantonDVD: ScreenSaverView {
         initPositionIfNeeded()
         hideSystemOverlaysOnce()
 
+        let oldRect = NSRect(x: x, y: y, width: logoWidth, height: logoHeight)
+
         let maxX = bounds.width - logoWidth
         let maxY = bounds.height - logoHeight
         var hit = false
@@ -155,41 +166,62 @@ class ScrantonDVD: ScreenSaverView {
             colourIndex = (colourIndex + 1 + Int.random(in: 0..<(colours.count - 1))) % colours.count
         }
 
-        let fracMaxX = max(bounds.width - logoWidth, 1)
-        let fracMaxY = max(bounds.height - logoHeight, 1)
-        ScrantonDVD.sharedFracX = x / fracMaxX
-        ScrantonDVD.sharedFracY = y / fracMaxY
+        ScrantonDVD.sharedFracX = x / cachedFracMaxX
+        ScrantonDVD.sharedFracY = y / cachedFracMaxY
         ScrantonDVD.sharedDXSign = dx > 0 ? 1.0 : -1.0
         ScrantonDVD.sharedDYSign = dy > 0 ? 1.0 : -1.0
         ScrantonDVD.sharedColourIndex = colourIndex
 
-        setNeedsDisplay(bounds)
+        let newRect = NSRect(x: x, y: y, width: logoWidth, height: logoHeight)
+        if mode == 1 {
+            // Mode 1's background is a solid fill derived from colourIndex, which
+            // can change on hit or during initial setup. Dirty-rect invalidation
+            // would leave stale bg outside the logo's path; repaint everything.
+            setNeedsDisplay(bounds)
+        } else {
+            // Modes 0 and 2 have a constant black background, so only the logo's
+            // old + new rects need to be invalidated.
+            setNeedsDisplay(NSUnionRect(oldRect, newRect))
+        }
     }
 
     override func draw(_ rect: NSRect) {
-        guard let path = cachedPath else { return }
-        let ci = colourIndex
-
         if mode == 1 {
-            cachedBgColours[ci].setFill()
+            cachedBgColours[colourIndex].setFill()
         } else {
             NSColor.black.setFill()
         }
-        bounds.fill()
+        rect.fill()
 
-        guard let ctx = NSGraphicsContext.current?.cgContext else { return }
-        ctx.saveGState()
-        ctx.translateBy(x: x, y: y + logoHeight)
-        ctx.scaleBy(x: 1, y: -1)
+        rebuildLogoImageIfNeeded()
+        cachedLogoImage?.draw(in: NSRect(x: x, y: y, width: logoWidth, height: logoHeight))
+    }
 
-        if mode == 2 {
-            NSColor.white.setFill()
-        } else {
-            cachedLogoColours[ci].setFill()
+    private func rebuildLogoImageIfNeeded() {
+        guard let path = cachedPath else { return }
+        let size = NSSize(width: logoWidth, height: logoHeight)
+        if cachedLogoImage != nil
+            && cachedImageColourIndex == colourIndex
+            && cachedImageMode == mode
+            && cachedImageSize == size {
+            return
         }
-        path.fill()
 
-        ctx.restoreGState()
+        let fillColor: NSColor = (mode == 2) ? .white : cachedLogoColours[colourIndex]
+        // Resolution-independent image — AppKit invokes the handler (and caches the
+        // result) once per backing scale, keeping the logo crisp on Retina displays.
+        let image = NSImage(size: size, flipped: false) { _ in
+            guard let ctx = NSGraphicsContext.current?.cgContext else { return false }
+            ctx.translateBy(x: 0, y: size.height)
+            ctx.scaleBy(x: 1, y: -1)
+            fillColor.setFill()
+            path.fill()
+            return true
+        }
+        cachedLogoImage = image
+        cachedImageColourIndex = colourIndex
+        cachedImageMode = mode
+        cachedImageSize = size
     }
 
     override var hasConfigureSheet: Bool { true }

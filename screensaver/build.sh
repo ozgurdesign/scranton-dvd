@@ -38,7 +38,8 @@ codesign --force --deep --sign - "$BUNDLE"
 
 mkdir -p "$BUNDLE/Contents/Resources"
 swiftc generate_thumbnail.swift -framework AppKit -o generate_thumbnail
-./generate_thumbnail "$BUNDLE/Contents/Resources/thumbnail.png"
+./generate_thumbnail "$BUNDLE/Contents/Resources/thumbnail.png" 1
+./generate_thumbnail "$BUNDLE/Contents/Resources/thumbnail@2x.png" 2
 rm -f generate_thumbnail
 
 codesign --force --deep --sign - "$BUNDLE"

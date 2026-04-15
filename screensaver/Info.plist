@@ -16,8 +16,16 @@
     <string>BNDL</string>
     <key>CFBundleShortVersionString</key>
     <string>1.0</string>
+    <key>CFBundleSignature</key>
+    <string>????</string>
+    <key>CFBundleSupportedPlatforms</key>
+    <array>
+        <string>MacOSX</string>
+    </array>
     <key>CFBundleVersion</key>
     <string>1</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>13.0</string>
     <key>NSPrincipalClass</key>
     <string>ScrantonDVD</string>
     <key>NSHumanReadableCopyright</key>

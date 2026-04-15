@@ -1,8 +1,15 @@
 import AppKit
 import CoreGraphics
 
-let width = 180
-let height = 116
+// Usage: generate_thumbnail <output.png> [scale]
+// scale defaults to 1 (produces the 1x asset); pass 2 for the @2x variant.
+// Base size (90x58) matches Apple's own Random.saver / FloatingMessage.saver
+// — the Wallpaper picker appears to reject oversized thumbnails.
+let scale: CGFloat = CommandLine.arguments.count > 2
+    ? CGFloat(Double(CommandLine.arguments[2]) ?? 1.0)
+    : 1.0
+let width = Int(90 * scale)
+let height = Int(58 * scale)
 let logoViewBox = CGSize(width: 210, height: 107)
 
 func dvdLogoPath(in rect: CGRect) -> CGPath {
@@ -113,7 +120,7 @@ guard let ctx = CGContext(
 ctx.setFillColor(CGColor(red: 0, green: 0, blue: 0, alpha: 1))
 ctx.fill(CGRect(x: 0, y: 0, width: width, height: height))
 
-let logoW: CGFloat = 80
+let logoW: CGFloat = 55 * scale
 let logoH: CGFloat = logoW * (logoViewBox.height / logoViewBox.width)
 let logoRect = CGRect(
     x: (CGFloat(width) - logoW) / 2,

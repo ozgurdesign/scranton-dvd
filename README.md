@@ -4,10 +4,23 @@ A macOS screensaver. The DVD logo bounces around your screen, changing colour wh
 
 ## Modes
 
-| Classic | Colorful | Monochrome |
-|---|---|---|
-| <img src="screenshots/scranton-dvd-classic.webp" alt="Classic mode" width="400"> | <img src="screenshots/scranton-dvd-colorful.webp" alt="Colorful mode" width="400"> | <img src="screenshots/scranton-dvd-monochrome.webp" alt="Monochrome mode" width="400"> |
-| Coloured logo on black, random colour on edge hit | Coloured logo on inverted background, random colours on edge hit | White logo on black |
+<table>
+  <tr>
+    <th width="33%">Classic</th>
+    <th width="33%">Colorful</th>
+    <th width="33%">Monochrome</th>
+  </tr>
+  <tr>
+    <td width="33%"><img src="screenshots/scranton-dvd-classic.webp" alt="Classic mode"></td>
+    <td width="33%"><img src="screenshots/scranton-dvd-colorful.webp" alt="Colorful mode"></td>
+    <td width="33%"><img src="screenshots/scranton-dvd-monochrome.webp" alt="Monochrome mode"></td>
+  </tr>
+  <tr>
+    <td width="33%">Coloured logo on black, random colour on edge hit</td>
+    <td width="33%">Coloured logo on inverted background, random colours on edge hit</td>
+    <td width="33%">White logo on black</td>
+  </tr>
+</table>
 
 Switch modes via the Options button in System Settings > Screen Saver.
 

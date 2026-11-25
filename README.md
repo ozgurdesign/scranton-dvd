@@ -34,9 +34,8 @@ The "Source code" links GitHub adds to every release only contain this README, t
 
 ## Install
 
-1. Unzip the download and double-click `Scranton DVD.saver`.
-2. The screensaver is not notarized, so macOS may ask you to approve it in System Settings › Privacy & Security.
-3. Pick Scranton DVD in System Settings › Screen Saver.
+1. Unzip the download and double-click `Scranton DVD.saver`. It is signed and notarized by Apple, so macOS installs it without asking for approval.
+2. Pick Scranton DVD in System Settings › Screen Saver.
 
 ### Thumbnail not showing in the picker?
 
